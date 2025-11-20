@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Article, Category } from '../types';
 import { AUTHORS } from '../constants';
+import { createArticle } from '../services/apiService';
 import { generateArticleTags, generateDraftContent } from '../services/geminiService';
 import { Sparkles, Save, Type, Tag as TagIcon } from 'lucide-react';
 
@@ -16,6 +17,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onPublish }) => {
   const [tags, setTags] = useState<string[]>([]);
   const [isGeneratingTags, setIsGeneratingTags] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   const handleGenerateTags = async () => {
     if (!title) return alert("Please enter a title first.");
@@ -33,22 +36,39 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onPublish }) => {
     setIsDrafting(false);
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newArticle: Article = {
-      id: Date.now().toString(),
-      title,
-      summary,
-      content,
-      category,
-      author: AUTHORS['david'], // Mock logged-in user
-      publishedAt: new Date().toISOString(),
-      imageUrl: `https://picsum.photos/seed/${Date.now()}/800/600`,
-      tags,
-      readTimeMinutes: Math.ceil(content.length / 1000) || 5,
-      isTopStory: false
-    };
-    onPublish(newArticle);
+    setIsPublishing(true);
+    setPublishError(null);
+
+    try {
+      const newArticle = await createArticle({
+        title,
+        summary,
+        content,
+        category,
+        author: AUTHORS['david'], // Mock logged-in user
+        publishedAt: new Date().toISOString(),
+        imageUrl: `https://picsum.photos/seed/${Date.now()}/800/600`,
+        tags,
+        readTimeMinutes: Math.ceil(content.length / 1000) || 5,
+        isTopStory: false
+      });
+      
+      onPublish(newArticle);
+      
+      // Reset form
+      setTitle('');
+      setSummary('');
+      setContent('');
+      setCategory('News');
+      setTags([]);
+    } catch (err: any) {
+      setPublishError(err.message || 'Failed to publish article');
+      console.error('Publish error:', err);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -65,6 +85,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onPublish }) => {
         </div>
         
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
+          {publishError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+              {publishError}
+            </div>
+          )}
+          
           {/* Title Section */}
           <div className="space-y-4">
              <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide">Headline</label>
@@ -153,8 +179,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onPublish }) => {
             <button type="button" className="px-6 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-md transition-colors">
                 Save Draft
             </button>
-            <button type="submit" className="px-8 py-2 bg-electric-600 text-white font-bold rounded-md hover:bg-electric-700 shadow-md transform active:scale-95 transition-all flex items-center gap-2">
-                <Save size={18} /> Publish Article
+            <button 
+              type="submit" 
+              disabled={isPublishing}
+              className="px-8 py-2 bg-electric-600 text-white font-bold rounded-md hover:bg-electric-700 shadow-md transform active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <Save size={18} /> {isPublishing ? 'Publishing...' : 'Publish Article'}
             </button>
           </div>
         </form>

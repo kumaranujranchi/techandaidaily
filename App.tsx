@@ -7,14 +7,21 @@ import { ArticlePage } from './components/ArticlePage';
 import { AdminPage } from './components/AdminPage';
 import { Newsletter } from './components/Newsletter';
 import { Article, Category } from './types';
-import { MOCK_ARTICLES } from './constants';
+import { fetchArticles, fetchArticleById } from './services/apiService';
 import { Search, Filter } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentHash, setCurrentHash] = useState(window.location.hash || '#/');
-  const [articles, setArticles] = useState<Article[]>(MOCK_ARTICLES);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'All'>('All');
+
+  // Load articles from API
+  useEffect(() => {
+    loadArticles();
+  }, [selectedCategory, searchQuery]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -24,34 +31,71 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  const loadArticles = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchArticles({
+        category: selectedCategory !== 'All' ? selectedCategory : undefined,
+        search: searchQuery || undefined,
+      });
+      setArticles(data);
+    } catch (err) {
+      setError('Failed to load articles. Please try again later.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Routing Logic
   let ComponentToRender: React.ReactNode;
   
   const isArticleRoute = currentHash.startsWith('#/article/');
   const articleId = isArticleRoute ? currentHash.split('/article/')[1] : null;
-  
-  const filteredArticles = articles.filter(article => {
-    const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          article.summary.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || article.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
 
   const handleAddArticle = (newArticle: Article) => {
     setArticles(prev => [newArticle, ...prev]);
     window.location.hash = '#/';
   };
 
-  if (currentHash === '#/admin') {
-    ComponentToRender = <AdminPage onPublish={handleAddArticle} />;
-  } else if (isArticleRoute && articleId) {
-    const article = articles.find(a => a.id === articleId);
-    if (article) {
-      ComponentToRender = <ArticlePage article={article} />;
-    } else {
-      ComponentToRender = <div className="min-h-screen flex items-center justify-center text-xl font-serif">Article not found.</div>;
-    }
+  // Show loading state
+  if (loading && articles.length === 0) {
+    ComponentToRender = (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy-800 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading articles...</p>
+        </div>
+      </div>
+    );
+  } else if (error) {
+    ComponentToRender = (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={loadArticles}
+            className="px-4 py-2 bg-navy-800 text-white rounded-md hover:bg-navy-900"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   } else {
+    const filteredArticles = articles;
+
+    if (currentHash === '#/admin') {
+      ComponentToRender = <AdminPage onPublish={handleAddArticle} />;
+    } else if (isArticleRoute && articleId) {
+      const article = articles.find(a => a.id === articleId);
+      if (article) {
+        ComponentToRender = <ArticlePage article={article} />;
+      } else {
+        ComponentToRender = <div className="min-h-screen flex items-center justify-center text-xl font-serif">Article not found.</div>;
+      }
+    } else {
     // Home / Category View
     const topStory = filteredArticles.find(a => a.isTopStory) || filteredArticles[0];
     const feed = filteredArticles.filter(a => a.id !== topStory?.id);
@@ -115,6 +159,7 @@ const App: React.FC = () => {
         <Newsletter />
       </>
     );
+    }
   }
 
   return (

@@ -9,6 +9,14 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
+      build: {
+        outDir: 'dist',
+        emptyOutDir: true,
+        // Generate source maps for debugging
+        sourcemap: false,
+        // Optimize for production
+        minify: 'terser',
+      },
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),

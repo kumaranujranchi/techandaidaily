@@ -8,8 +8,8 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
-dist-ssr
+# dist - Commented out so GitHub Actions can commit it
+# dist-ssr
 *.local
 
 # Editor directories and files
@@ -22,3 +22,30 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Database
+*.sql.backup
+*.db
+
+# PHP
+*.php~
+.phpunit.result.cache
+vendor/
+
+# OS
+Thumbs.db
+
+# Build files
+*.tsbuildinfo
+.cache/
+
+# Testing
+coverage/
+
+# Deployment
+deploy/
