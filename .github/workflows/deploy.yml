@@ -39,13 +39,18 @@ jobs:
       run: |
         # Copy built files to root for easy deployment
         cp dist/index.html ./
-        cp -r dist/assets ./ 2>/dev/null || true
+        if [ -d "dist/assets" ]; then
+          cp -r dist/assets ./
+        fi
         cp public/.htaccess ./
     
     - name: Commit deployment files
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add -f index.html assets/ .htaccess api/
+        git add -f index.html .htaccess api/
+        if [ -d "assets" ]; then
+          git add -f assets/
+        fi
         git diff --staged --quiet || git commit -m "Deploy: Update production files [skip ci]"
         git push
