@@ -5,9 +5,12 @@ import { Hero } from './components/Hero';
 import { ArticleGrid } from './components/ArticleGrid';
 import { ArticlePage } from './components/ArticlePage';
 import { AdminPage } from './components/AdminPage';
+import { EnhancedAdminPage } from './components/EnhancedAdminPage';
+import { LoginPage } from './components/LoginPage';
 import { Newsletter } from './components/Newsletter';
 import { Article, Category } from './types';
 import { fetchArticles, fetchArticleById } from './services/apiService';
+import { login, logout, verifySession } from './services/authService';
 import { Search, Filter } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -17,6 +20,18 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'All'>('All');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { authenticated } = await verifySession();
+      setIsAuthenticated(authenticated);
+      setCheckingAuth(false);
+    };
+    checkAuth();
+  }, []);
 
   // Load articles from API
   useEffect(() => {
@@ -59,6 +74,22 @@ const App: React.FC = () => {
     window.location.hash = '#/';
   };
 
+  const handleLogin = async (username: string, password: string): Promise<boolean> => {
+    try {
+      await login({ username, password });
+      setIsAuthenticated(true);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setIsAuthenticated(false);
+    window.location.hash = '#/';
+  };
+
   // Show loading state
   if (loading && articles.length === 0) {
     ComponentToRender = (
@@ -87,7 +118,12 @@ const App: React.FC = () => {
     const filteredArticles = articles;
 
     if (currentHash === '#/admin') {
-      ComponentToRender = <AdminPage onPublish={handleAddArticle} />;
+      // Check if user is authenticated
+      if (!isAuthenticated) {
+        ComponentToRender = <LoginPage onLogin={handleLogin} />;
+      } else {
+        ComponentToRender = <EnhancedAdminPage onPublish={handleAddArticle} onLogout={handleLogout} />;
+      }
     } else if (isArticleRoute && articleId) {
       const article = articles.find(a => a.id === articleId);
       if (article) {
