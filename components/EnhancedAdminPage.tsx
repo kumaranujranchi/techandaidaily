@@ -30,7 +30,6 @@ export const EnhancedAdminPage: React.FC<EnhancedAdminPageProps> = ({ onPublish,
   const [uploading, setUploading] = useState(false);
   
   // UI states
-  const [activeTab, setActiveTab] = useState<'content' | 'seo' | 'media'>('content');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [publishSuccess, setPublishSuccess] = useState(false);
@@ -140,21 +139,6 @@ export const EnhancedAdminPage: React.FC<EnhancedAdminPageProps> = ({ onPublish,
     }
   };
 
-  const TabButton: React.FC<{ id: typeof activeTab; icon: React.ReactNode; label: string }> = ({ id, icon, label }) => (
-    <button
-      type="button"
-      onClick={() => setActiveTab(id)}
-      className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-        activeTab === id
-          ? 'bg-electric-600 text-white'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -175,30 +159,28 @@ export const EnhancedAdminPage: React.FC<EnhancedAdminPageProps> = ({ onPublish,
 
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Tabs */}
-          <div className="border-b border-gray-200 px-6 py-4">
-            <div className="flex space-x-2">
-              <TabButton id="content" icon={<FileText className="w-4 h-4" />} label="Content" />
-              <TabButton id="media" icon={<Image className="w-4 h-4" />} label="Media" />
-              <TabButton id="seo" icon={<Globe className="w-4 h-4" />} label="SEO" />
-            </div>
-          </div>
-
           <form onSubmit={handleSubmit} className="p-6">
             {publishError && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
                 {publishError}
               </div>
             )}
 
             {publishSuccess && (
-              <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
                 Article published successfully!
               </div>
             )}
 
-            {/* Content Tab */}
-            {activeTab === 'content' && (
+            {/* All sections in single page */}
+            <div className="space-y-10">
+              
+              {/* CONTENT SECTION */}
+              <div>
+                <h2 className="text-xl font-bold text-navy-800 mb-6 pb-3 border-b-2 border-electric-600 flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Article Content
+                </h2>
               <div className="space-y-6">
                 {/* Title */}
                 <div>
@@ -284,10 +266,13 @@ export const EnhancedAdminPage: React.FC<EnhancedAdminPageProps> = ({ onPublish,
                   />
                 </div>
               </div>
-            )}
 
-            {/* Media Tab */}
-            {activeTab === 'media' && (
+              {/* MEDIA SECTION */}
+              <div>
+                <h2 className="text-xl font-bold text-navy-800 mb-6 pb-3 border-b-2 border-electric-600 flex items-center">
+                  <Image className="w-5 h-5 mr-2" />
+                  Media & Images
+                </h2>
               <div className="space-y-6">
                 {/* Thumbnail */}
                 <div>
@@ -346,10 +331,13 @@ export const EnhancedAdminPage: React.FC<EnhancedAdminPageProps> = ({ onPublish,
                   <p className="mt-1 text-xs text-gray-500">Recommended: 1200x630px</p>
                 </div>
               </div>
-            )}
 
-            {/* SEO Tab */}
-            {activeTab === 'seo' && (
+              {/* SEO SECTION */}
+              <div>
+                <h2 className="text-xl font-bold text-navy-800 mb-6 pb-3 border-b-2 border-electric-600 flex items-center">
+                  <Globe className="w-5 h-5 mr-2" />
+                  SEO Settings
+                </h2>
               <div className="space-y-6">
                 {/* Slug */}
                 <div>
@@ -422,7 +410,7 @@ export const EnhancedAdminPage: React.FC<EnhancedAdminPageProps> = ({ onPublish,
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Submit Button */}
             <div className="mt-8 pt-6 border-t border-gray-200 flex justify-between items-center">
